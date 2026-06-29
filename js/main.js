@@ -1,22 +1,16 @@
-/**
- * main.js - نقطة البداية الرئيسية للتطبيق
- */
-
-let currentTab = 'main';
-
 function sendWhatsApp(phone, name) {
-    if (!phone || phone === 'غير متوفر') { UI.showAlert('رقم الهاتف غير متوفر'); return; }
+    if (!phone || phone === 'غير متوفر') return;
     let clean = phone.replace(/[^\d]/g, '');
     if (!clean.startsWith('2')) clean = '2' + clean;
     window.open(`https://wa.me/${clean}?text=${encodeURIComponent(`مرحباً ${name}،\nنود إعلامك بحالة طلبك في نور للبصريات.`)}`, '_blank');
 }
 
 function switchTab(tab) {
-    currentTab = tab;
     const mainTab = document.getElementById('mainTabContent');
     const reportsTab = document.getElementById('reportsTabContent');
     const tabMain = document.getElementById('tabMain');
     const tabReports = document.getElementById('tabReports');
+    
     if (tab === 'main') {
         if (mainTab) mainTab.classList.remove('hidden');
         if (reportsTab) reportsTab.classList.add('hidden');
@@ -31,6 +25,10 @@ function switchTab(tab) {
     }
 }
 
+function switchBranch(branch) {
+    if (typeof BranchesModule !== 'undefined') BranchesModule.switchBranch(branch);
+}
+
 function loadDarkMode() {
     const isDark = localStorage.getItem('noor_dark_mode') === 'true';
     const icon = document.getElementById('darkModeIcon');
@@ -38,18 +36,12 @@ function loadDarkMode() {
     else { document.documentElement.classList.remove('dark'); if (icon) icon.className = 'fa-solid fa-moon'; }
 }
 
-function switchBranch(branch) {
-    if (typeof BranchesModule !== 'undefined') BranchesModule.switchBranch(branch);
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 نظام نور للبصريات - جارٍ التحميل...');
     loadDarkMode();
-    document.getElementById('loginScreen')?.classList.remove('hidden');
-    document.getElementById('mainApp')?.classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('mainApp').classList.add('hidden');
     const orderDateEl = document.getElementById('orderDate');
     if (orderDateEl) orderDateEl.value = new Date().toISOString().split('T')[0];
-    console.log('✅ نظام نور للبصريات جاهز');
 });
 
 window.switchTab = switchTab;
