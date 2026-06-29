@@ -1,0 +1,409 @@
+/* ===== الأساسيات ===== */
+body {
+    font-family: 'Cairo', sans-serif;
+    font-size: 16px;
+    background: #f4f6f9;
+}
+
+.dark body {
+    background: #1a202c;
+}
+
+/* ===== بطاقات أودو ===== */
+.odoo-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.dark .odoo-card {
+    background: #2d3748;
+    color: #e2e8f0;
+}
+
+/* ===== الهيدر ===== */
+.odoo-header {
+    background: #875A7B;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ===== الأزرار ===== */
+.odoo-btn-primary {
+    background: #875A7B;
+    color: white;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.odoo-btn-primary:hover {
+    background: #6f4a64;
+    transform: translateY(-1px);
+}
+
+.odoo-btn-primary:active {
+    transform: translateY(0);
+}
+
+/* ===== حقول الإدخال ===== */
+.odoo-input {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 16px;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.dark .odoo-input {
+    background: #4a5568;
+    border-color: #718096;
+    color: #e2e8f0;
+}
+
+.odoo-input:focus {
+    outline: none;
+    border-color: #875A7B;
+    box-shadow: 0 0 0 3px rgba(135,90,123,0.1);
+}
+
+/* ===== المودالات ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+    padding: 1rem;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    transform: translateY(20px);
+    transition: 0.3s;
+    border: none;
+}
+
+.dark .modal-content {
+    background: #2d3748;
+    color: #e2e8f0;
+}
+
+.modal-overlay.active .modal-content {
+    transform: translateY(0);
+}
+
+/* ===== شاشة تسجيل الدخول ===== */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f6f9;
+    padding: 1rem;
+}
+
+.login-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 2.5rem;
+    width: 90%;
+    max-width: 440px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ===== المحتوى القابل للطي ===== */
+.collapsible-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+}
+
+.collapsible-content.open {
+    max-height: 2000px;
+}
+
+/* ===== شارات النوع ===== */
+.type-badge {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.type-new-glasses {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.type-lenses-only {
+    background: #dbeafe;
+    color: #1e3a8a;
+    border: 1px solid #93c5fd;
+}
+
+.type-maintenance {
+    background: #ede9fe;
+    color: #5b21b6;
+    border: 1px solid #c4b5fd;
+}
+
+.dark .type-new-glasses {
+    background: rgba(251,191,36,0.2);
+    color: #fcd34d;
+}
+
+.dark .type-lenses-only {
+    background: rgba(96,165,250,0.2);
+    color: #93c5fd;
+}
+
+.dark .type-maintenance {
+    background: rgba(167,139,250,0.2);
+    color: #c4b5fd;
+}
+
+/* ===== زر واتساب ===== */
+.whatsapp-btn {
+    color: #25D366;
+    transition: all 0.2s;
+}
+
+.whatsapp-btn:hover {
+    background: rgba(37,211,102,0.1);
+}
+
+/* ===== تنبيهات التأخير ===== */
+.delayed-warning {
+    background: rgba(245,158,11,0.08);
+    border-right: 3px solid #f59e0b;
+}
+
+.delayed-danger {
+    background: rgba(239,68,68,0.08);
+    border-right: 3px solid #ef4444;
+}
+
+.dark .delayed-warning {
+    background: rgba(245,158,11,0.2);
+}
+
+.dark .delayed-danger {
+    background: rgba(239,68,68,0.2);
+}
+
+/* ===== التصفّح ===== */
+.pagination-btn {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.4rem 1rem;
+    font-weight: 600;
+    color: #334155;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.dark .pagination-btn {
+    background: #475569;
+    border-color: #64748b;
+    color: #e2e8f0;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #e2e8f0;
+}
+
+.dark .pagination-btn:hover:not(:disabled) {
+    background: #64748b;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== أزرار الفلتر ===== */
+.filter-btn {
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.filter-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* ===== تنسيقات Select ===== */
+#branchSelect {
+    color: #fff;
+    background: transparent;
+}
+
+.dark #branchSelect {
+    color: #e2e8f0;
+}
+
+#branchSelect option {
+    background: #875A7B;
+    color: white;
+}
+
+.dark #branchSelect option {
+    background: #2d3748;
+}
+
+/* ===== حقل اختياري ===== */
+.optional-label::after {
+    content: " (اختياري)";
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.dark .optional-label::after {
+    color: #94a3b8;
+}
+
+/* ===== تجاوب الجدول ===== */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ===== تجاوب عام ===== */
+@media (max-width: 640px) {
+    body {
+        font-size: 14px;
+    }
+    
+    .odoo-card {
+        border-radius: 8px;
+    }
+    
+    .modal-content {
+        padding: 1rem;
+        border-radius: 12px;
+        width: 95%;
+        margin: 0.5rem;
+    }
+    
+    .login-card {
+        padding: 1.5rem;
+    }
+    
+    .odoo-input {
+        font-size: 14px;
+        padding: 0.4rem 0.6rem;
+    }
+    
+    table {
+        font-size: 12px;
+    }
+    
+    th, td {
+        padding: 0.5rem 0.25rem !important;
+    }
+    
+    .type-badge {
+        font-size: 11px;
+        padding: 1px 8px;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+    .odoo-input {
+        font-size: 15px;
+    }
+}
+
+/* ===== الطباعة ===== */
+@media print {
+    body {
+        background: #ffffff !important;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
+    
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    
+    th, td {
+        border: 1px solid #cbd5e1 !important;
+        padding: 6px !important;
+        font-size: 9pt !important;
+        color: #000 !important;
+    }
+    
+    .print-container {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+}
+
+/* ===== تأثيرات حركية ===== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.odoo-card {
+    animation: fadeIn 0.3s ease;
+}
+
+/* ===== شريط التمرير ===== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: #334155;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #875A7B;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6f4a64;
+}
