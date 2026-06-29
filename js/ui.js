@@ -359,11 +359,12 @@ const UI = (() => {
             
             rowHtml += `<td class="p-3 sm:p-4 text-center no-print"><button onclick="sendWhatsApp('${o.phone}', '${o.name.replace(/'/g, "\\'")}')" class="whatsapp-btn p-1.5 sm:p-2 rounded-lg"><i class="fa-brands fa-whatsapp text-xl sm:text-2xl"></i></button></td>`;
             
-            if (isAdmin) {
+                        if (isAdmin) {
+                const safeId = o.id.replace(/'/g, "\\'");
                 rowHtml += `<td class="p-3 sm:p-4 text-center no-print"><div class="flex justify-center gap-1">
-                    <button onclick="OrdersModule.openEditModal('${o.id}')" class="text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 p-1.5 sm:p-2 rounded-lg"><i class="fa-solid fa-pen-to-square text-base sm:text-lg"></i></button>
-                    <button onclick="OrdersModule.toggleStatus('${o.id}')" class="text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 p-1.5 sm:p-2 rounded-lg"><i class="fa-solid fa-right-left text-base sm:text-lg"></i></button>
-                    <button onclick="OrdersModule.deleteOrder('${o.id}')" class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-1.5 sm:p-2 rounded-lg"><i class="fa-regular fa-trash-can text-base sm:text-lg"></i></button>
+                    <button onclick="OrdersModule.openEditModal('${safeId}')" class="text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 p-1.5 sm:p-2 rounded-lg" title="تعديل"><i class="fa-solid fa-pen-to-square text-base sm:text-lg"></i></button>
+                    <button onclick="OrdersModule.toggleStatus('${safeId}')" class="text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 p-1.5 sm:p-2 rounded-lg" title="تبديل التواجد"><i class="fa-solid fa-right-left text-base sm:text-lg"></i></button>
+                    <button onclick="OrdersModule.deleteOrder('${safeId}')" class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-1.5 sm:p-2 rounded-lg" title="حذف"><i class="fa-regular fa-trash-can text-base sm:text-lg"></i></button>
                 </div></td>`;
             }
             
