@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة وتتبع الطلبات - نظارات نور (متعدد الفروع)</title>
+
+    <!-- الخطوط -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- الأنماط المخصصة -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        odoo: {
+                            50: '#f3eef1', 100: '#e8dde5', 200: '#d1bccb',
+                            300: '#b99bb1', 400: '#a27998', 500: '#875A7B',
+                            600: '#6f4a64', 700: '#573a4d', 800: '#402a36',
+                            900: '#291a1f',
+                        }
+                    },
+                    fontFamily: { cairo: ['Cairo', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <!-- المكتبات الخارجية -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+</head>
+<body class="text-slate-800 antialiased">
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <div class="text-center mb-8">
+                <img src="https://i.ibb.co/ZRzPPhJ4/Chat-GPT-Image-29-2026-07-06-53.png" alt="نور للبصريات" class="w-24 h-24 object-contain rounded-2xl shadow-lg mx-auto mb-4">
+                <h2 class="text-2xl font-extrabold text-slate-800">نظارات نور</h2>
+                <p class="text-base text-slate-500 mt-1">نظام تتبع متعدد الفروع</p>
+            </div>
+            <form id="loginForm" class="space-y-5">
+                <div>
+                    <label class="block text-base font-semibold text-slate-600 mb-2">اسم المستخدم</label>
+                    <div class="relative">
+                        <span class="absolute right-3 top-3.5 text-slate-400"><i class="fa-regular fa-user"></i></span>
+                        <input type="text" id="usernameInput" class="w-full odoo-input pr-10 pl-4" placeholder="أدخل اسم المستخدم" autocomplete="off">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-base font-semibold text-slate-600 mb-2">كلمة المرور</label>
+                    <div class="relative">
+                        <span class="absolute right-3 top-3.5 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="passwordInput" class="w-full odoo-input pr-10 pl-4" placeholder="••••••••" autocomplete="off">
+                    </div>
+                </div>
+                <button type="submit" class="w-full odoo-btn-primary py-3 text-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول
+                </button>
+            </form>
+            <p class="text-sm text-slate-400 mt-8 text-center">Made with ❤️ by Mohammed Hussein 2026</p>
+        </div>
+    </div>
+
+    <!-- التطبيق الرئيسي -->
+    <div id="mainApp" class="min-h-screen flex flex-col hidden">
+
+        <!-- هيدر -->
+        <header class="odoo-header no-print">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-3 sm:gap-4">
+                        <img src="https://i.ibb.co/ZRzPPhJ4/Chat-GPT-Image-29-2026-07-06-53.png" alt="نور للبصريات" class="w-10 h-10 object-contain rounded-lg">
+                        <div>
+                            <h1 class="text-lg sm:text-xl font-extrabold tracking-tight">نور للبصريات</h1>
+                            <p class="text-xs sm:text-sm text-white/80 flex items-center gap-1">
+                                <i class="fa-solid fa-shop"></i> <span id="currentBranchName">كل الفروع</span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- أدوات الهيدر -->
+                    <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
+                        <div class="flex items-center gap-1 bg-white/15 rounded-lg px-2 sm:px-3 py-2" id="branchSelectorContainer">
+                            <i class="fa-solid fa-code-branch text-white/70 text-sm hidden sm:inline"></i>
+                            <select id="branchSelect" class="bg-transparent text-white text-sm sm:text-base font-bold border-none outline-none cursor-pointer max-w-[120px] sm:max-w-none"></select>
+                            <button onclick="BranchesModule.openModal()" id="manageBranchesBtn" class="text-white/70 hover:text-white transition-colors">
+                                <i class="fa-solid fa-gear text-sm"></i>
+                            </button>
+                        </div>
+                        
+                        <span class="text-xs sm:text-sm bg-white/15 px-3 sm:px-4 py-2 rounded-lg hidden sm:inline">
+                            <i class="fa-solid fa-user-tie ml-1"></i> <span id="loggedUserInfo"></span>
+                        </span>
+                        
+                        <button onclick="UI.toggleDarkMode()" class="bg-white/15 hover:bg-white/20 px-2 sm:px-3 py-2 rounded-lg text-sm transition-colors" title="الوضع الليلي">
+                            <i id="darkModeIcon" class="fa-solid fa-moon"></i>
+                        </button>
+                        
+                        <button onclick="UsersModule.openModal()" id="manageUsersBtn" class="bg-white/15 hover:bg-white/20 px-2 sm:px-3 py-2 rounded-lg text-sm transition-colors" title="إدارة المستخدمين">
+                            <i class="fa-solid fa-users-gear"></i>
+                        </button>
+                        
+                        <button onclick="OrdersModule.openQuickAdd()" id="headerQuickAddBtn" class="bg-white/20 hover:bg-white/30 px-3 sm:px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+                            <i class="fa-solid fa-bolt text-yellow-300 ml-1"></i> <span class="hidden sm:inline">إضافة سريعة</span>
+                        </button>
+                        
+                        <button onclick="AuthModule.changePassword()" class="bg-white/15 hover:bg-white/20 px-2 sm:px-3 py-2 rounded-lg text-sm transition-colors" title="تغيير كلمة المرور">
+                            <i class="fa-solid fa-lock"></i>
+                        </button>
+                        
+                        <button onclick="AuthModule.logout()" class="bg-white/15 hover:bg-rose-400/50 px-2 sm:px-3 py-2 rounded-lg text-sm transition-colors" title="تسجيل الخروج">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- تبويبات -->
+            <div class="bg-white/10 border-t border-white/15">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1">
+                    <button id="tabMain" class="px-4 sm:px-5 py-3 text-sm sm:text-base font-bold text-white border-b-2 border-white transition-colors">
+                        <i class="fa-solid fa-table-list ml-2"></i> الرئيسية
+                    </button>
+                    <button id="tabReports" class="px-4 sm:px-5 py-3 text-sm sm:text-base font-medium text-white/70 hover:text-white transition-colors">
+                        <i class="fa-solid fa-chart-simple ml-2"></i> التقارير
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- المحتوى الرئيسي -->
+        <main class="flex-grow max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-8 print-container">
+            <!-- التنبيهات الذكية -->
+            <div id="smartAlerts" class="mb-4 sm:mb-6 no-print"></div>
+
+            <!-- تبويب الرئيسية -->
+            <div id="mainTabContent">
+                <!-- كروت الإحصائيات -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 no-print" id="statsCards">
+                    <!-- يتم ملؤها بواسطة ui.js -->
+                </div>
+
+                <!-- نموذج الإدخال -->
+                <div class="mb-4 sm:mb-6 no-print" id="orderFormSection">
+                    <!-- يتم ملؤها بواسطة ui.js -->
+                </div>
+
+                <!-- الجدول مع التصفّح -->
+                <div class="w-full" id="tableSection">
+                    <!-- يتم ملؤها بواسطة ui.js -->
+                </div>
+            </div>
+
+            <!-- تبويب التقارير -->
+            <div id="reportsTabContent" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8" id="reportsGrid">
+                    <!-- يتم ملؤها بواسطة reports.js -->
+                </div>
+            </div>
+        </main>
+
+        <!-- المودالات -->
+        <div id="modalsContainer">
+            <!-- يتم ملؤها بواسطة ui.js -->
+        </div>
+
+        <!-- الفوتر -->
+        <footer class="bg-white dark:bg-gray-800 border-t border-slate-200 dark:border-slate-700 py-4 sm:py-5 text-center no-print">
+            <p class="text-sm sm:text-base text-slate-400 dark:text-slate-300">نظام تتبع نور للبصريات &copy; 2026</p>
+            <p class="text-xs sm:text-base text-slate-500 dark:text-slate-400 mt-1">Made with <span class="text-red-500">❤️</span> by Mohammed Hussein 2026</p>
+        </footer>
+    </div>
+
+    <!-- ملفات JavaScript -->
+    <script src="js/config.js"></script>
+    <script src="js/firebase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/orders.js"></script>
+    <script src="js/reports.js"></script>
+    <script src="js/users.js"></script>
+    <script src="js/branches.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+
+</body>
+</html>
