@@ -3,20 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة وتتبع الطلبات - نظارات نور (متعدد الفروع)</title>
+    <title>نظام إدارة وتتبع الطلبات - نظارات نور</title>
 
-    <!-- الخطوط -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- الأنماط المخصصة -->
     <link rel="stylesheet" href="css/style.css">
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -37,7 +32,6 @@
         }
     </script>
 
-    <!-- المكتبات الخارجية -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -79,7 +73,6 @@
     <!-- التطبيق الرئيسي -->
     <div id="mainApp" class="min-h-screen flex flex-col hidden">
 
-        <!-- هيدر -->
         <header class="odoo-header no-print">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -93,14 +86,11 @@
                         </div>
                     </div>
                     
-                    <!-- أدوات الهيدر -->
                     <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
                         <div class="flex items-center gap-1 bg-white/15 rounded-lg px-2 sm:px-3 py-2" id="branchSelectorContainer">
                             <i class="fa-solid fa-code-branch text-white/70 text-sm hidden sm:inline"></i>
-                            <select id="branchSelect" class="bg-transparent text-white text-sm sm:text-base font-bold border-none outline-none cursor-pointer max-w-[120px] sm:max-w-none"></select>
-                            <button onclick="BranchesModule.openModal()" id="manageBranchesBtn" class="text-white/70 hover:text-white transition-colors">
-                                <i class="fa-solid fa-gear text-sm"></i>
-                            </button>
+                            <select id="branchSelect" onchange="switchBranch(this.value)" class="bg-transparent text-white text-sm sm:text-base font-bold border-none outline-none cursor-pointer max-w-[120px] sm:max-w-none"></select>
+                            <button onclick="BranchesModule.openModal()" id="manageBranchesBtn" class="text-white/70 hover:text-white transition-colors"><i class="fa-solid fa-gear text-sm"></i></button>
                         </div>
                         
                         <span class="text-xs sm:text-sm bg-white/15 px-3 sm:px-4 py-2 rounded-lg hidden sm:inline">
@@ -130,56 +120,34 @@
                 </div>
             </div>
             
-            <!-- تبويبات -->
             <div class="bg-white/10 border-t border-white/15">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1">
-                    <button id="tabMain" class="px-4 sm:px-5 py-3 text-sm sm:text-base font-bold text-white border-b-2 border-white transition-colors">
+                    <button onclick="switchTab('main')" id="tabMain" class="px-4 sm:px-5 py-3 text-sm sm:text-base font-bold text-white border-b-2 border-white transition-colors">
                         <i class="fa-solid fa-table-list ml-2"></i> الرئيسية
                     </button>
-                    <button id="tabReports" class="px-4 sm:px-5 py-3 text-sm sm:text-base font-medium text-white/70 hover:text-white transition-colors">
+                    <button onclick="switchTab('reports')" id="tabReports" class="px-4 sm:px-5 py-3 text-sm sm:text-base font-medium text-white/70 hover:text-white transition-colors">
                         <i class="fa-solid fa-chart-simple ml-2"></i> التقارير
                     </button>
                 </div>
             </div>
         </header>
 
-        <!-- المحتوى الرئيسي -->
         <main class="flex-grow max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-8 print-container">
-            <!-- التنبيهات الذكية -->
             <div id="smartAlerts" class="mb-4 sm:mb-6 no-print"></div>
 
-            <!-- تبويب الرئيسية -->
             <div id="mainTabContent">
-                <!-- كروت الإحصائيات -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 no-print" id="statsCards">
-                    <!-- يتم ملؤها بواسطة ui.js -->
-                </div>
-
-                <!-- نموذج الإدخال -->
-                <div class="mb-4 sm:mb-6 no-print" id="orderFormSection">
-                    <!-- يتم ملؤها بواسطة ui.js -->
-                </div>
-
-                <!-- الجدول مع التصفّح -->
-                <div class="w-full" id="tableSection">
-                    <!-- يتم ملؤها بواسطة ui.js -->
-                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 no-print" id="statsCards"></div>
+                <div class="mb-4 sm:mb-6 no-print" id="orderFormSection"></div>
+                <div class="w-full" id="tableSection"></div>
             </div>
 
-            <!-- تبويب التقارير -->
             <div id="reportsTabContent" class="hidden">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8" id="reportsGrid">
-                    <!-- يتم ملؤها بواسطة reports.js -->
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8" id="reportsGrid"></div>
             </div>
         </main>
 
-        <!-- المودالات -->
-        <div id="modalsContainer">
-            <!-- يتم ملؤها بواسطة ui.js -->
-        </div>
+        <div id="modalsContainer"></div>
 
-        <!-- الفوتر -->
         <footer class="bg-white dark:bg-gray-800 border-t border-slate-200 dark:border-slate-700 py-4 sm:py-5 text-center no-print">
             <p class="text-sm sm:text-base text-slate-400 dark:text-slate-300">نظام تتبع نور للبصريات &copy; 2026</p>
             <p class="text-xs sm:text-base text-slate-500 dark:text-slate-400 mt-1">Made with <span class="text-red-500">❤️</span> by Mohammed Hussein 2026</p>
