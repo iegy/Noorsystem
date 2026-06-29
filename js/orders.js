@@ -3,18 +3,14 @@
  */
 
 const OrdersModule = (() => {
-    const { db } = FirebaseModule;
 
-    /**
-     * إضافة طلب جديد
-     */
     async function addOrder(event) {
         event.preventDefault();
         
         const user = FirebaseModule.currentUser;
         if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
         
-        const dateValue = document.getElementById('orderDate').value;
+        const dateValue = document.getElementById('orderDate')?.value;
         let formattedDate;
         if (dateValue) {
             const [y, m, d] = dateValue.split('-');
@@ -24,8 +20,8 @@ const OrdersModule = (() => {
             formattedDate = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
         }
         
-        const total = parseFloat(document.getElementById('totalPrice').value) || 0;
-        const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+        const total = parseFloat(document.getElementById('totalPrice')?.value) || 0;
+        const paid = parseFloat(document.getElementById('paidAmount')?.value) || 0;
         let orderBranch = FirebaseModule.currentBranch;
         
         if (user.role === 'super_admin' && FirebaseModule.currentBranch === 'all') {
@@ -35,13 +31,13 @@ const OrdersModule = (() => {
         const newOrder = {
             date: formattedDate,
             branch: orderBranch,
-            soNumber: document.getElementById('orderSoNumber').value.trim(),
-            name: document.getElementById('custName').value.trim() || 'بدون اسم',
-            phone: document.getElementById('custPhone').value.trim() || 'غير متوفر',
-            type: document.getElementById('orderType').value,
-            status: document.getElementById('orderStatus').value,
-            delivery: document.getElementById('deliveryStatus').value,
-            notes: document.getElementById('orderNotes').value.trim(),
+            soNumber: document.getElementById('orderSoNumber')?.value?.trim() || '',
+            name: document.getElementById('custName')?.value?.trim() || 'بدون اسم',
+            phone: document.getElementById('custPhone')?.value?.trim() || 'غير متوفر',
+            type: document.getElementById('orderType')?.value || 'نظارة وعدسات جديدة',
+            status: document.getElementById('orderStatus')?.value || 'في المكتب',
+            delivery: document.getElementById('deliveryStatus')?.value || 'لم يتم',
+            notes: document.getElementById('orderNotes')?.value?.trim() || '',
             total,
             paid,
             remaining: total - paid,
@@ -51,21 +47,25 @@ const OrdersModule = (() => {
         try {
             await FirebaseModule.addOrder(newOrder);
             
-            document.getElementById('orderForm').reset();
-            document.getElementById('orderDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('remainingAmount').value = 0;
+            const form = document.getElementById('orderForm');
+            if (form) form.reset();
             
-            if (document.getElementById('formCollapsible').classList.contains('open')) {
+            const orderDateEl = document.getElementById('orderDate');
+            if (orderDateEl) orderDateEl.value = new Date().toISOString().split('T')[0];
+            
+            const remainingEl = document.getElementById('remainingAmount');
+            if (remainingEl) remainingEl.value = 0;
+            
+            const formCollapsible = document.getElementById('formCollapsible');
+            if (formCollapsible && formCollapsible.classList.contains('open')) {
                 UI.toggleOrderForm();
             }
         } catch (e) {
+            console.error("❌ فشل في إضافة الطلب:", e);
             UI.showAlert("حدث خطأ أثناء حفظ الطلب");
         }
     }
 
-    /**
-     * تبديل حالة التواجد
-     */
     async function toggleStatus(orderId) {
         const user = FirebaseModule.currentUser;
         if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
@@ -77,9 +77,6 @@ const OrdersModule = (() => {
         }
     }
 
-    /**
-     * تبديل حالة التسليم
-     */
     async function toggleDelivery(orderId) {
         const user = FirebaseModule.currentUser;
         if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
@@ -91,9 +88,6 @@ const OrdersModule = (() => {
         }
     }
 
-    /**
-     * حذف طلب
-     */
     async function deleteOrder(orderId) {
         const user = FirebaseModule.currentUser;
         if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
@@ -105,9 +99,6 @@ const OrdersModule = (() => {
         });
     }
 
-    /**
-     * فتح نموذج التعديل
-     */
     function openEditModal(orderId) {
         const user = FirebaseModule.currentUser;
         if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
@@ -115,43 +106,54 @@ const OrdersModule = (() => {
         const order = FirebaseModule.orders.find(o => o.id === orderId);
         if (!order) return;
         
-        document.getElementById('editId').value = order.id;
+        const editId = document.getElementById('editId');
+        const editDate = document.getElementById('editDate');
+        const editName = document.getElementById('editName');
+        const editPhone = document.getElementById('editPhone');
+        const editSoNumber = document.getElementById('editSoNumber');
+        const editType = document.getElementById('editType');
+        const editStatus = document.getElementById('editStatus');
+        const editDelivery = document.getElementById('editDelivery');
+        const editTotal = document.getElementById('editTotal');
+        const editPaid = document.getElementById('editPaid');
+        const editRemaining = document.getElementById('editRemaining');
+        const editNotes = document.getElementById('editNotes');
+        
+        if (editId) editId.value = order.id;
         
         const parts = order.date.split('/');
-        if (parts.length === 3) {
-            document.getElementById('editDate').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
-        } else {
-            document.getElementById('editDate').value = '';
+        if (editDate && parts.length === 3) {
+            editDate.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        } else if (editDate) {
+            editDate.value = '';
         }
         
-        document.getElementById('editName').value = order.name;
-        document.getElementById('editPhone').value = order.phone;
-        document.getElementById('editSoNumber').value = order.soNumber || '';
-        document.getElementById('editType').value = order.type;
-        document.getElementById('editStatus').value = order.status;
-        document.getElementById('editDelivery').value = order.delivery || 'لم يتم';
-        document.getElementById('editTotal').value = order.total;
-        document.getElementById('editPaid').value = order.paid;
-        document.getElementById('editRemaining').value = order.remaining;
-        document.getElementById('editNotes').value = order.notes || '';
+        if (editName) editName.value = order.name;
+        if (editPhone) editPhone.value = order.phone;
+        if (editSoNumber) editSoNumber.value = order.soNumber || '';
+        if (editType) editType.value = order.type;
+        if (editStatus) editStatus.value = order.status;
+        if (editDelivery) editDelivery.value = order.delivery || 'لم يتم';
+        if (editTotal) editTotal.value = order.total;
+        if (editPaid) editPaid.value = order.paid;
+        if (editRemaining) editRemaining.value = order.remaining;
+        if (editNotes) editNotes.value = order.notes || '';
         
-        document.getElementById('editModal').classList.add('active');
+        const editModal = document.getElementById('editModal');
+        if (editModal) editModal.classList.add('active');
     }
 
-    /**
-     * حفظ التعديلات
-     */
     async function saveEdit(event) {
         event.preventDefault();
         
         const user = FirebaseModule.currentUser;
         if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
         
-        const orderId = document.getElementById('editId').value;
+        const orderId = document.getElementById('editId')?.value;
         const order = FirebaseModule.orders.find(o => o.id === orderId);
         
         if (order) {
-            const dateValue = document.getElementById('editDate').value;
+            const dateValue = document.getElementById('editDate')?.value;
             let formattedDate = order.date;
             if (dateValue) {
                 const [y, m, d] = dateValue.split('-');
@@ -159,25 +161,24 @@ const OrdersModule = (() => {
             }
             
             order.date = formattedDate;
-            order.name = document.getElementById('editName').value.trim() || 'بدون اسم';
-            order.phone = document.getElementById('editPhone').value.trim() || 'غير متوفر';
-            order.soNumber = document.getElementById('editSoNumber').value.trim();
-            order.type = document.getElementById('editType').value;
-            order.status = document.getElementById('editStatus').value;
-            order.delivery = document.getElementById('editDelivery').value;
-            order.total = parseFloat(document.getElementById('editTotal').value) || 0;
-            order.paid = parseFloat(document.getElementById('editPaid').value) || 0;
+            order.name = document.getElementById('editName')?.value?.trim() || 'بدون اسم';
+            order.phone = document.getElementById('editPhone')?.value?.trim() || 'غير متوفر';
+            order.soNumber = document.getElementById('editSoNumber')?.value?.trim() || '';
+            order.type = document.getElementById('editType')?.value || order.type;
+            order.status = document.getElementById('editStatus')?.value || order.status;
+            order.delivery = document.getElementById('editDelivery')?.value || order.delivery;
+            order.total = parseFloat(document.getElementById('editTotal')?.value) || 0;
+            order.paid = parseFloat(document.getElementById('editPaid')?.value) || 0;
             order.remaining = Math.max(0, order.total - order.paid);
-            order.notes = document.getElementById('editNotes').value.trim();
+            order.notes = document.getElementById('editNotes')?.value?.trim() || '';
             
             await FirebaseModule.updateOrder(orderId, order);
-            UI.closeModal('editModal');
+            
+            const editModal = document.getElementById('editModal');
+            if (editModal) editModal.classList.remove('active');
         }
     }
 
-    /**
-     * فتح الإضافة السريعة
-     */
     function openQuickAdd() {
         const user = FirebaseModule.currentUser;
         if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
@@ -185,53 +186,58 @@ const OrdersModule = (() => {
         const formCollapsible = document.getElementById('formCollapsible');
         const formToggleIcon = document.getElementById('formToggleIcon');
         
-        if (!formCollapsible.classList.contains('open')) {
+        if (formCollapsible && !formCollapsible.classList.contains('open')) {
             formCollapsible.classList.add('open');
-            formToggleIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            if (formToggleIcon) {
+                formToggleIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            }
         }
         
-        document.getElementById('orderDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('custName').value = 'عميل كاش';
-        document.getElementById('custPhone').value = 'غير متوفر';
-        document.getElementById('orderSoNumber').value = '';
-        document.getElementById('totalPrice').value = '';
-        document.getElementById('paidAmount').value = '0';
-        document.getElementById('remainingAmount').value = '0';
-        document.getElementById('orderNotes').value = '';
-        document.getElementById('orderStatus').value = 'في المكتب';
-        document.getElementById('deliveryStatus').value = 'لم يتم';
-        document.getElementById('custName').focus();
+        const orderDate = document.getElementById('orderDate');
+        const custName = document.getElementById('custName');
+        const custPhone = document.getElementById('custPhone');
+        const orderSoNumber = document.getElementById('orderSoNumber');
+        const totalPrice = document.getElementById('totalPrice');
+        const paidAmount = document.getElementById('paidAmount');
+        const remainingAmount = document.getElementById('remainingAmount');
+        const orderNotes = document.getElementById('orderNotes');
+        const orderStatus = document.getElementById('orderStatus');
+        const deliveryStatus = document.getElementById('deliveryStatus');
+        
+        if (orderDate) orderDate.value = new Date().toISOString().split('T')[0];
+        if (custName) custName.value = 'عميل كاش';
+        if (custPhone) custPhone.value = 'غير متوفر';
+        if (orderSoNumber) orderSoNumber.value = '';
+        if (totalPrice) totalPrice.value = '';
+        if (paidAmount) paidAmount.value = '0';
+        if (remainingAmount) remainingAmount.value = '0';
+        if (orderNotes) orderNotes.value = '';
+        if (orderStatus) orderStatus.value = 'في المكتب';
+        if (deliveryStatus) deliveryStatus.value = 'لم يتم';
+        if (custName) custName.focus();
     }
 
-    /**
-     * حساب المتبقي
-     */
     function calcRemaining() {
-        const total = parseFloat(document.getElementById('totalPrice').value) || 0;
-        const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
-        document.getElementById('remainingAmount').value = Math.max(0, total - paid);
+        const total = parseFloat(document.getElementById('totalPrice')?.value) || 0;
+        const paid = parseFloat(document.getElementById('paidAmount')?.value) || 0;
+        const remaining = document.getElementById('remainingAmount');
+        if (remaining) remaining.value = Math.max(0, total - paid);
     }
 
-    /**
-     * حساب المتبقي في نموذج التعديل
-     */
     function updateEditRemaining() {
-        const total = parseFloat(document.getElementById('editTotal').value) || 0;
-        const paid = parseFloat(document.getElementById('editPaid').value) || 0;
-        document.getElementById('editRemaining').value = Math.max(0, total - paid);
+        const total = parseFloat(document.getElementById('editTotal')?.value) || 0;
+        const paid = parseFloat(document.getElementById('editPaid')?.value) || 0;
+        const remaining = document.getElementById('editRemaining');
+        if (remaining) remaining.value = Math.max(0, total - paid);
     }
 
-    // ربط الأحداث
-    document.getElementById('orderForm').addEventListener('submit', addOrder);
-    document.getElementById('editForm').addEventListener('submit', saveEdit);
-
-    // الواجهة العامة
     return {
         addOrder,
         toggleStatus,
         toggleDelivery,
         deleteOrder,
         openEditModal,
+        saveEdit,
         openQuickAdd,
         calcRemaining,
         updateEditRemaining
