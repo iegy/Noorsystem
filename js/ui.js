@@ -111,21 +111,157 @@ const UI = (() => {
     }
 
     function buildModals() {
-        const container = document.getElementById('modalsContainer');
-        if (!container) return;
-        const orderTypes = window.APP_CONFIG?.ORDER_TYPES || ['نظارة وعدسات جديدة', 'عدسات فقط', 'صيانة فقط'];
-        const orderStatuses = window.APP_CONFIG?.ORDER_STATUSES || ['في المكتب', 'بالمحل'];
-        const deliveryStatuses = window.APP_CONFIG?.DELIVERY_STATUSES || ['لم يتم', 'تم التسليم'];
-        container.innerHTML = `
-            <div id="passwordModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('passwordModal')"><div class="modal-content"><div class="flex justify-between items-center mb-5"><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">تغيير كلمة المرور</h3><button onclick="UI.closeModal('passwordModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl sm:text-2xl"></i></button></div><form id="passwordForm" class="space-y-4 sm:space-y-5"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">كلمة المرور الحالية</label><input type="password" id="currentPassword" class="w-full odoo-input" required></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">كلمة المرور الجديدة</label><input type="password" id="newPassword" class="w-full odoo-input" required></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">تأكيد كلمة المرور الجديدة</label><input type="password" id="confirmNewPassword" class="w-full odoo-input" required></div><button type="submit" class="w-full odoo-btn-primary py-2 sm:py-3 text-base sm:text-lg">حفظ كلمة المرور الجديدة</button></form></div></div>
-            <div id="editModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('editModal')"><div class="modal-content"><div class="flex justify-between items-center mb-4 sm:mb-5"><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">تعديل الطلب</h3><button onclick="UI.closeModal('editModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl sm:text-2xl"></i></button></div><form id="editForm" class="space-y-4 sm:space-y-5"><input type="hidden" id="editId"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">تاريخ الإرسال</label><input type="date" id="editDate" class="w-full odoo-input"></div><div class="grid grid-cols-2 gap-3 sm:gap-4"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">الاسم</label><input type="text" id="editName" class="w-full odoo-input"></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">الهاتف</label><input type="text" id="editPhone" class="w-full odoo-input"></div></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">رقم SO</label><input type="text" id="editSoNumber" class="w-full odoo-input"></div><div class="grid grid-cols-3 gap-3 sm:gap-4"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">الإجمالي</label><input type="number" id="editTotal" class="w-full odoo-input" oninput="OrdersModule.updateEditRemaining()"></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">المدفوع</label><input type="number" id="editPaid" class="w-full odoo-input" oninput="OrdersModule.updateEditRemaining()"></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">المتبقي</label><input type="number" id="editRemaining" class="w-full bg-slate-100 dark:bg-slate-600 rounded-lg py-2 px-3 text-base font-bold" readonly></div></div><div class="grid grid-cols-2 gap-3 sm:gap-4"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">النوع</label><select id="editType" class="w-full odoo-input">${orderTypes.map(t => `<option value="${t}">${t}</option>`).join('')}</select></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">التواجد</label><select id="editStatus" class="w-full odoo-input">${orderStatuses.map(s => `<option value="${s}">${s}</option>`).join('')}</select></div></div><div class="grid grid-cols-2 gap-3 sm:gap-4"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">التسليم</label><select id="editDelivery" class="w-full odoo-input">${deliveryStatuses.map(d => `<option value="${d}">${d}</option>`).join('')}</select></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">ملاحظات</label><input type="text" id="editNotes" class="w-full odoo-input"></div></div><button type="submit" class="w-full odoo-btn-primary py-2 sm:py-3 text-base sm:text-lg"><i class="fa-solid fa-floppy-disk ml-2"></i> حفظ التعديلات</button></form></div></div>
-            <div id="branchesModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('branchesModal')"><div class="modal-content"><div class="flex justify-between items-center mb-4 sm:mb-5"><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">إدارة الفروع</h3><button onclick="UI.closeModal('branchesModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl sm:text-2xl"></i></button></div><div class="space-y-3 mb-4 sm:mb-5 max-h-60 overflow-y-auto" id="branchesList"></div><div class="flex gap-2"><input type="text" id="newBranchName" class="flex-1 odoo-input" placeholder="اسم الفرع الجديد"><button onclick="BranchesModule.addBranch()" class="odoo-btn-primary">إضافة</button></div></div></div>
-            <div id="columnSettingsModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('columnSettingsModal')"><div class="modal-content"><div class="flex justify-between items-center mb-4 sm:mb-5"><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">تخصيص الأعمدة</h3><button onclick="UI.closeModal('columnSettingsModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl sm:text-2xl"></i></button></div><div class="space-y-3 max-h-80 overflow-y-auto" id="columnsCheckboxes"></div><div class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2" id="columnCountIndicator"></div><button onclick="UI.saveColumnSettings()" class="mt-4 sm:mt-5 w-full odoo-btn-primary py-2 sm:py-3 text-base sm:text-lg">حفظ الإعدادات</button></div></div>
-            <div id="usersModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('usersModal')"><div class="modal-content" style="max-width: 650px;"><div class="flex justify-between items-center mb-4 sm:mb-5"><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">إدارة المستخدمين</h3><button onclick="UI.closeModal('usersModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl sm:text-2xl"></i></button></div><div class="space-y-3 mb-4 sm:mb-5 max-h-60 overflow-y-auto" id="usersList"></div><div class="border-t border-slate-200 dark:border-slate-600 pt-4 mt-4"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-3">إضافة مستخدم جديد</h4><div class="grid grid-cols-2 gap-3 mb-3"><input type="text" id="newUsername" class="odoo-input" placeholder="اسم المستخدم"><input type="password" id="newUserPassword" class="odoo-input" placeholder="كلمة المرور (6 خانات)"><input type="text" id="newUserDisplayName" class="odoo-input" placeholder="الاسم الظاهر"><select id="newUserRole" class="odoo-input"><option value="super_admin">مدير عام</option><option value="branch_admin" selected>مدير فرع</option><option value="user">موظف</option></select><select id="newUserBranch" class="odoo-input"></select></div><button onclick="UsersModule.addNewUser()" class="w-full odoo-btn-primary py-2 text-base">إضافة</button></div></div></div>
-            <div id="confirmModal" class="modal-overlay"><div class="modal-content text-center"><div class="text-4xl sm:text-5xl mb-4 text-rose-500"><i class="fa-solid fa-circle-question"></i></div><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white mb-3" id="confirmMessage"></h3><div class="flex justify-center gap-4 sm:gap-5 mt-5 sm:mt-6"><button onclick="UI.confirmAction(false)" class="bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500 py-2 sm:py-2.5 px-6 sm:px-8 rounded-lg font-bold text-base sm:text-lg">إلغاء</button><button onclick="UI.confirmAction(true)" class="bg-rose-500 hover:bg-rose-600 text-white py-2 sm:py-2.5 px-6 sm:px-8 rounded-lg font-bold text-base sm:text-lg">تأكيد</button></div></div></div>
-            <div id="alertModal" class="modal-overlay"><div class="modal-content text-center"><div class="text-4xl sm:text-5xl mb-4 text-odoo-500"><i class="fa-solid fa-circle-info"></i></div><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white mb-3" id="alertMessage"></h3><button onclick="UI.closeAlert()" class="odoo-btn-primary py-2 sm:py-2.5 px-8 sm:px-10 text-base sm:text-lg mt-4 sm:mt-5">حسنًا</button></div></div>
-        `;
-    }
+    const container = document.getElementById('modalsContainer');
+    if (!container) return;
+    
+    const orderTypes = window.APP_CONFIG?.ORDER_TYPES || ['نظارة وعدسات جديدة', 'عدسات فقط', 'صيانة فقط'];
+    const orderStatuses = window.APP_CONFIG?.ORDER_STATUSES || ['في المكتب', 'بالمحل'];
+    const deliveryStatuses = window.APP_CONFIG?.DELIVERY_STATUSES || ['لم يتم', 'تم التسليم'];
+    
+    container.innerHTML = `
+        <!-- مودال كلمة المرور -->
+        <div id="passwordModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('passwordModal')">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div style="display:flex;align-items:center;">
+                        <div class="modal-header-icon"><i class="fa-solid fa-lock"></i></div>
+                        <span class="modal-header-title">تغيير كلمة المرور</span>
+                    </div>
+                    <button onclick="UI.closeModal('passwordModal')" class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="passwordForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">كلمة المرور الحالية</label>
+                            <input type="password" id="currentPassword" class="w-full odoo-input" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">كلمة المرور الجديدة</label>
+                            <input type="password" id="newPassword" class="w-full odoo-input" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">تأكيد كلمة المرور</label>
+                            <input type="password" id="confirmNewPassword" class="w-full odoo-input" required>
+                        </div>
+                        <button type="submit" class="w-full modal-btn modal-btn-primary py-2.5 text-base">حفظ كلمة المرور الجديدة</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- مودال التعديل -->
+        <div id="editModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('editModal')">
+            <div class="modal-content" style="max-width:600px;">
+                <div class="modal-header">
+                    <div style="display:flex;align-items:center;">
+                        <div class="modal-header-icon"><i class="fa-solid fa-pen-to-square"></i></div>
+                        <span class="modal-header-title">تعديل الطلب</span>
+                    </div>
+                    <button onclick="UI.closeModal('editModal')" class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm" class="space-y-4">
+                        <input type="hidden" id="editId">
+                        <div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1 optional-label">تاريخ الإرسال</label><input type="date" id="editDate" class="w-full odoo-input"></div>
+                        <div class="grid grid-cols-2 gap-3"><div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1 optional-label">الاسم</label><input type="text" id="editName" class="w-full odoo-input"></div><div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1 optional-label">الهاتف</label><input type="text" id="editPhone" class="w-full odoo-input"></div></div>
+                        <div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1 optional-label">رقم SO</label><input type="text" id="editSoNumber" class="w-full odoo-input"></div>
+                        <div class="grid grid-cols-3 gap-3"><div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1 optional-label">الإجمالي</label><input type="number" id="editTotal" class="w-full odoo-input" oninput="OrdersModule.updateEditRemaining()"></div><div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1 optional-label">المدفوع</label><input type="number" id="editPaid" class="w-full odoo-input" oninput="OrdersModule.updateEditRemaining()"></div><div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">المتبقي</label><input type="number" id="editRemaining" class="w-full bg-slate-100 dark:bg-slate-600 rounded-lg py-2 px-3 font-bold" readonly></div></div>
+                        <div class="grid grid-cols-2 gap-3"><div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">النوع</label><select id="editType" class="w-full odoo-input">${orderTypes.map(t => `<option value="${t}">${t}</option>`).join('')}</select></div><div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">التواجد</label><select id="editStatus" class="w-full odoo-input">${orderStatuses.map(s => `<option value="${s}">${s}</option>`).join('')}</select></div></div>
+                        <div class="grid grid-cols-2 gap-3"><div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">التسليم</label><select id="editDelivery" class="w-full odoo-input">${deliveryStatuses.map(d => `<option value="${d}">${d}</option>`).join('')}</select></div><div><label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1 optional-label">ملاحظات</label><input type="text" id="editNotes" class="w-full odoo-input"></div></div>
+                        <button type="submit" class="w-full modal-btn modal-btn-primary py-2.5 text-base"><i class="fa-solid fa-floppy-disk ml-2"></i> حفظ التعديلات</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- مودال الفروع -->
+        <div id="branchesModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('branchesModal')">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div style="display:flex;align-items:center;">
+                        <div class="modal-header-icon"><i class="fa-solid fa-code-branch"></i></div>
+                        <span class="modal-header-title">إدارة الفروع</span>
+                    </div>
+                    <button onclick="UI.closeModal('branchesModal')" class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="space-y-3 mb-4 max-h-60 overflow-y-auto" id="branchesList"></div>
+                    <div class="flex gap-2"><input type="text" id="newBranchName" class="flex-1 odoo-input" placeholder="اسم الفرع الجديد"><button onclick="BranchesModule.addBranch()" class="modal-btn modal-btn-primary"><i class="fa-solid fa-plus ml-1"></i> إضافة</button></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- مودال إعدادات الأعمدة -->
+        <div id="columnSettingsModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('columnSettingsModal')">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div style="display:flex;align-items:center;">
+                        <div class="modal-header-icon"><i class="fa-solid fa-table-columns"></i></div>
+                        <span class="modal-header-title">تخصيص الأعمدة</span>
+                    </div>
+                    <button onclick="UI.closeModal('columnSettingsModal')" class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="space-y-3 max-h-80 overflow-y-auto" id="columnsCheckboxes"></div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-3" id="columnCountIndicator"></div>
+                    <button onclick="UI.saveColumnSettings()" class="mt-4 w-full modal-btn modal-btn-primary py-2.5 text-base">حفظ الإعدادات</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- مودال المستخدمين -->
+        <div id="usersModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('usersModal')">
+            <div class="modal-content" style="max-width:650px;">
+                <div class="modal-header">
+                    <div style="display:flex;align-items:center;">
+                        <div class="modal-header-icon"><i class="fa-solid fa-users-gear"></i></div>
+                        <span class="modal-header-title">إدارة المستخدمين</span>
+                    </div>
+                    <button onclick="UI.closeModal('usersModal')" class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="space-y-3 mb-4 max-h-60 overflow-y-auto" id="usersList"></div>
+                    <div class="border-t border-slate-200 dark:border-slate-600 pt-4 mt-4">
+                        <h4 class="font-bold text-slate-700 dark:text-slate-200 mb-3">إضافة مستخدم جديد</h4>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <input type="text" id="newUsername" class="odoo-input" placeholder="اسم المستخدم">
+                            <input type="password" id="newUserPassword" class="odoo-input" placeholder="كلمة المرور (6 خانات)">
+                            <input type="text" id="newUserDisplayName" class="odoo-input" placeholder="الاسم الظاهر">
+                            <select id="newUserRole" class="odoo-input"><option value="super_admin">مدير عام</option><option value="branch_admin" selected>مدير فرع</option><option value="user">موظف</option></select>
+                            <select id="newUserBranch" class="odoo-input"></select>
+                        </div>
+                        <button onclick="UsersModule.addNewUser()" class="w-full modal-btn modal-btn-primary py-2 text-base"><i class="fa-solid fa-user-plus ml-1"></i> إضافة</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- مودال التأكيد -->
+        <div id="confirmModal" class="modal-overlay confirm-modal">
+            <div class="modal-content" style="max-width:420px;">
+                <div class="modal-body">
+                    <div class="confirm-icon warning"><i class="fa-solid fa-circle-question"></i></div>
+                    <h3 class="confirm-title" id="confirmMessage"></h3>
+                    <div class="flex justify-center gap-3">
+                        <button onclick="UI.confirmAction(false)" class="modal-btn modal-btn-secondary flex-1">إلغاء</button>
+                        <button onclick="UI.confirmAction(true)" class="modal-btn modal-btn-danger flex-1">تأكيد</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- مودال التنبيه -->
+        <div id="alertModal" class="modal-overlay confirm-modal">
+            <div class="modal-content" style="max-width:400px;">
+                <div class="modal-body">
+                    <div class="confirm-icon info"><i class="fa-solid fa-circle-info"></i></div>
+                    <h3 class="confirm-title" id="alertMessage"></h3>
+                    <button onclick="UI.closeAlert()" class="modal-btn modal-btn-primary w-full mt-2">حسنًا</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
 
     function buildReportsGrid() {
         const container = document.getElementById('reportsGrid');
