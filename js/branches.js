@@ -4,18 +4,13 @@
 
 const BranchesModule = (() => {
 
-    /**
-     * فتح مودال الفروع
-     */
     function openModal() {
         if (FirebaseModule.currentUser?.role !== 'super_admin') return;
         renderList();
-        document.getElementById('branchesModal').classList.add('active');
+        const modal = document.getElementById('branchesModal');
+        if (modal) modal.classList.add('active');
     }
 
-    /**
-     * عرض قائمة الفروع
-     */
     function renderList() {
         const container = document.getElementById('branchesList');
         if (!container) return;
@@ -35,32 +30,26 @@ const BranchesModule = (() => {
         `).join('');
     }
 
-    /**
-     * إضافة فرع جديد
-     */
     async function addBranch() {
-        const name = document.getElementById('newBranchName').value.trim();
+        const input = document.getElementById('newBranchName');
+        const name = input?.value?.trim();
         if (!name) return UI.showAlert('أدخل اسم الفرع');
         if (FirebaseModule.branches.includes(name)) return UI.showAlert('الفرع موجود');
         
         FirebaseModule.branches.push(name);
         await FirebaseModule.saveBranches(FirebaseModule.branches);
         
-        document.getElementById('newBranchName').value = '';
+        if (input) input.value = '';
         populateBranchSelect();
         renderList();
     }
 
-    /**
-     * تعديل اسم فرع
-     */
     async function editBranch(index) {
         const newName = prompt('اسم الفرع الجديد:', FirebaseModule.branches[index]);
         if (newName && newName.trim() && !FirebaseModule.branches.includes(newName.trim())) {
             const old = FirebaseModule.branches[index];
             FirebaseModule.branches[index] = newName.trim();
             
-            // تحديث الطلبات المرتبطة
             for (const o of FirebaseModule.orders) {
                 if (o.branch === old) {
                     o.branch = newName.trim();
@@ -80,9 +69,6 @@ const BranchesModule = (() => {
         }
     }
 
-    /**
-     * حذف فرع
-     */
     async function deleteBranch(index) {
         if (FirebaseModule.branches.length <= 1) {
             return UI.showAlert('يجب وجود فرع واحد على الأقل');
@@ -91,7 +77,6 @@ const BranchesModule = (() => {
         const branchToDelete = FirebaseModule.branches[index];
         UI.showConfirm(`حذف فرع "${branchToDelete}" سينقل طلباته إلى "عام". متابعة؟`, async (ok) => {
             if (ok) {
-                // تحديث الطلبات
                 for (const o of FirebaseModule.orders) {
                     if (o.branch === branchToDelete) {
                         o.branch = 'عام';
@@ -112,29 +97,23 @@ const BranchesModule = (() => {
         });
     }
 
-    /**
-     * تبديل الفرع الحالي
-     */
     function switchBranch(branch) {
         if (FirebaseModule.currentUser?.role === 'branch_admin') return;
         
         FirebaseModule.currentBranch = branch;
         localStorage.setItem('noor_current_branch', branch);
-        document.getElementById('currentBranchName').innerText = 
-            branch === 'all' ? 'كل الفروع' : branch;
         
-        UI.currentPage = 1;
-        UI.renderTable();
+        const branchNameEl = document.getElementById('currentBranchName');
+        if (branchNameEl) {
+            branchNameEl.innerText = branch === 'all' ? 'كل الفروع' : branch;
+        }
         
-        const currentTab = document.getElementById('mainTabContent').classList.contains('hidden') ? 'reports' : 'main';
-        if (currentTab === 'reports') {
-            ReportsModule.renderAllReports();
+        if (typeof UI !== 'undefined') {
+            UI.currentPage = 1;
+            if (UI.renderTable) UI.renderTable();
         }
     }
 
-    /**
-     * تحديث قائمة الفروع في المحددات
-     */
     function populateBranchSelect() {
         const select = document.getElementById('branchSelect');
         if (!select) return;
@@ -157,7 +136,6 @@ const BranchesModule = (() => {
         }
     }
 
-    // الواجهة العامة
     return {
         openModal,
         addBranch,
