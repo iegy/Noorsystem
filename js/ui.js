@@ -1,11 +1,11 @@
 /**
- * ui.js - واجهة المستخدم (جداول، مودالات، فلاتر، تصفّح)
+ * ui.js - واجهة المستخدم (جداول، مودالات، فلاتر، تصفّح، بحث)
  */
 
 const UI = (() => {
     let currentFilter = 'all';
     let currentPage = 1;
-    const PAGE_SIZE = window.APP_CONFIG.PAGE_SIZE;
+    const PAGE_SIZE = window.APP_CONFIG?.PAGE_SIZE || 30;
 
     /**
      * تهيئة واجهة المستخدم
@@ -16,13 +16,12 @@ const UI = (() => {
         buildTableSection();
         buildModals();
         buildReportsGrid();
-        populateBranchSelect();
+        BranchesModule.populateBranchSelect();
         switchTab('main');
     }
 
-    /**
-     * بناء كروت الإحصائيات
-     */
+    // ========== بناء العناصر ==========
+
     function buildStatsCards() {
         const container = document.getElementById('statsCards');
         if (!container) return;
@@ -51,12 +50,13 @@ const UI = (() => {
         `;
     }
 
-    /**
-     * بناء نموذج الطلب
-     */
     function buildOrderForm() {
         const container = document.getElementById('orderFormSection');
         if (!container) return;
+        
+        const orderTypes = window.APP_CONFIG?.ORDER_TYPES || ['نظارة وعدسات جديدة', 'عدسات فقط', 'صيانة فقط'];
+        const orderStatuses = window.APP_CONFIG?.ORDER_STATUSES || ['في المكتب', 'بالمحل'];
+        const deliveryStatuses = window.APP_CONFIG?.DELIVERY_STATUSES || ['لم يتم', 'تم التسليم'];
         
         container.innerHTML = `
             <div class="odoo-card rounded-xl overflow-hidden">
@@ -78,9 +78,9 @@ const UI = (() => {
                                 <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">اسم العميل</label><input type="text" id="custName" class="w-full odoo-input" placeholder="محمد أحمد..."></div>
                                 <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">رقم التليفون</label><input type="tel" id="custPhone" class="w-full odoo-input text-right" placeholder="012xxxxxxx"></div>
                                 <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">رقم SO</label><input type="text" id="orderSoNumber" class="w-full odoo-input" placeholder="مثال: SO-00125"></div>
-                                <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">تصنيف العمل</label><select id="orderType" class="w-full odoo-input">${ORDER_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}</select></div>
-                                <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">التواجد</label><select id="orderStatus" class="w-full odoo-input">${ORDER_STATUSES.map(s => `<option value="${s}">${s}</option>`).join('')}</select></div>
-                                <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">تسليم العميل</label><select id="deliveryStatus" class="w-full odoo-input">${DELIVERY_STATUSES.map(d => `<option value="${d}">${d === 'لم يتم' ? 'لم يتم ❌' : 'تم التسليم ✅'}</option>`).join('')}</select></div>
+                                <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">تصنيف العمل</label><select id="orderType" class="w-full odoo-input">${orderTypes.map(t => `<option value="${t}">${t}</option>`).join('')}</select></div>
+                                <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">التواجد</label><select id="orderStatus" class="w-full odoo-input">${orderStatuses.map(s => `<option value="${s}">${s}</option>`).join('')}</select></div>
+                                <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">تسليم العميل</label><select id="deliveryStatus" class="w-full odoo-input">${deliveryStatuses.map(d => `<option value="${d}">${d === 'لم يتم' ? 'لم يتم ❌' : 'تم التسليم ✅'}</option>`).join('')}</select></div>
                                 <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">ملاحظات</label><textarea id="orderNotes" rows="2" class="w-full odoo-input" placeholder="ملاحظات..."></textarea></div>
                             </div>
                             <div class="bg-slate-50 dark:bg-slate-700/50 p-4 sm:p-5 rounded-xl space-y-3 sm:space-y-4">
@@ -98,9 +98,6 @@ const UI = (() => {
         `;
     }
 
-    /**
-     * بناء قسم الجدول
-     */
     function buildTableSection() {
         const container = document.getElementById('tableSection');
         if (!container) return;
@@ -134,9 +131,9 @@ const UI = (() => {
                     </table>
                 </div>
                 <div id="paginationControls" class="flex justify-between items-center px-3 sm:px-4 py-3 border-t border-slate-200 dark:border-slate-600 no-print hidden">
-                    <button id="prevPageBtn" class="pagination-btn flex items-center gap-1 text-sm sm:text-base"><i class="fa-solid fa-chevron-right"></i> السابق</button>
+                    <button id="prevPageBtn" onclick="UI.goToPage(UI.currentPage - 1)" class="pagination-btn flex items-center gap-1 text-sm sm:text-base"><i class="fa-solid fa-chevron-right"></i> السابق</button>
                     <span class="text-sm sm:text-base font-medium text-slate-700 dark:text-slate-200" id="pageInfo"></span>
-                    <button id="nextPageBtn" class="pagination-btn flex items-center gap-1 text-sm sm:text-base">التالي <i class="fa-solid fa-chevron-left"></i></button>
+                    <button id="nextPageBtn" onclick="UI.goToPage(UI.currentPage + 1)" class="pagination-btn flex items-center gap-1 text-sm sm:text-base">التالي <i class="fa-solid fa-chevron-left"></i></button>
                 </div>
                 <div id="noDataView" class="hidden p-8 sm:p-12 text-center no-print">
                     <div class="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 dark:bg-slate-700 text-slate-300 rounded-full flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3"><i class="fa-solid fa-inbox"></i></div>
@@ -146,15 +143,15 @@ const UI = (() => {
         `;
     }
 
-    /**
-     * بناء المودالات
-     */
     function buildModals() {
         const container = document.getElementById('modalsContainer');
         if (!container) return;
         
+        const orderTypes = window.APP_CONFIG?.ORDER_TYPES || ['نظارة وعدسات جديدة', 'عدسات فقط', 'صيانة فقط'];
+        const orderStatuses = window.APP_CONFIG?.ORDER_STATUSES || ['في المكتب', 'بالمحل'];
+        const deliveryStatuses = window.APP_CONFIG?.DELIVERY_STATUSES || ['لم يتم', 'تم التسليم'];
+        
         container.innerHTML = `
-            <!-- مودال كلمة المرور -->
             <div id="passwordModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('passwordModal')">
                 <div class="modal-content">
                     <div class="flex justify-between items-center mb-5"><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">تغيير كلمة المرور</h3><button onclick="UI.closeModal('passwordModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl sm:text-2xl"></i></button></div>
@@ -167,7 +164,6 @@ const UI = (() => {
                 </div>
             </div>
 
-            <!-- مودال التعديل -->
             <div id="editModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('editModal')">
                 <div class="modal-content">
                     <div class="flex justify-between items-center mb-4 sm:mb-5"><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">تعديل الطلب</h3><button onclick="UI.closeModal('editModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl sm:text-2xl"></i></button></div>
@@ -177,14 +173,13 @@ const UI = (() => {
                         <div class="grid grid-cols-2 gap-3 sm:gap-4"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">الاسم</label><input type="text" id="editName" class="w-full odoo-input"></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">الهاتف</label><input type="text" id="editPhone" class="w-full odoo-input"></div></div>
                         <div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">رقم SO</label><input type="text" id="editSoNumber" class="w-full odoo-input"></div>
                         <div class="grid grid-cols-3 gap-3 sm:gap-4"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">الإجمالي</label><input type="number" id="editTotal" class="w-full odoo-input" oninput="OrdersModule.updateEditRemaining()"></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">المدفوع</label><input type="number" id="editPaid" class="w-full odoo-input" oninput="OrdersModule.updateEditRemaining()"></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">المتبقي</label><input type="number" id="editRemaining" class="w-full bg-slate-100 dark:bg-slate-600 rounded-lg py-2 px-3 text-base font-bold" readonly></div></div>
-                        <div class="grid grid-cols-2 gap-3 sm:gap-4"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">النوع</label><select id="editType" class="w-full odoo-input">${ORDER_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}</select></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">التواجد</label><select id="editStatus" class="w-full odoo-input">${ORDER_STATUSES.map(s => `<option value="${s}">${s}</option>`).join('')}</select></div></div>
-                        <div class="grid grid-cols-2 gap-3 sm:gap-4"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">التسليم</label><select id="editDelivery" class="w-full odoo-input">${DELIVERY_STATUSES.map(d => `<option value="${d}">${d}</option>`).join('')}</select></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">ملاحظات</label><input type="text" id="editNotes" class="w-full odoo-input"></div></div>
+                        <div class="grid grid-cols-2 gap-3 sm:gap-4"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">النوع</label><select id="editType" class="w-full odoo-input">${orderTypes.map(t => `<option value="${t}">${t}</option>`).join('')}</select></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">التواجد</label><select id="editStatus" class="w-full odoo-input">${orderStatuses.map(s => `<option value="${s}">${s}</option>`).join('')}</select></div></div>
+                        <div class="grid grid-cols-2 gap-3 sm:gap-4"><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2">التسليم</label><select id="editDelivery" class="w-full odoo-input">${deliveryStatuses.map(d => `<option value="${d}">${d}</option>`).join('')}</select></div><div><label class="block text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 mb-1 sm:mb-2 optional-label">ملاحظات</label><input type="text" id="editNotes" class="w-full odoo-input"></div></div>
                         <button type="submit" class="w-full odoo-btn-primary py-2 sm:py-3 text-base sm:text-lg"><i class="fa-solid fa-floppy-disk ml-2"></i> حفظ التعديلات</button>
                     </form>
                 </div>
             </div>
 
-            <!-- مودال الفروع -->
             <div id="branchesModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('branchesModal')">
                 <div class="modal-content">
                     <div class="flex justify-between items-center mb-4 sm:mb-5"><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">إدارة الفروع</h3><button onclick="UI.closeModal('branchesModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl sm:text-2xl"></i></button></div>
@@ -193,7 +188,6 @@ const UI = (() => {
                 </div>
             </div>
 
-            <!-- مودال إعدادات الأعمدة -->
             <div id="columnSettingsModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('columnSettingsModal')">
                 <div class="modal-content">
                     <div class="flex justify-between items-center mb-4 sm:mb-5"><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">تخصيص الأعمدة</h3><button onclick="UI.closeModal('columnSettingsModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl sm:text-2xl"></i></button></div>
@@ -203,7 +197,6 @@ const UI = (() => {
                 </div>
             </div>
 
-            <!-- مودال المستخدمين -->
             <div id="usersModal" class="modal-overlay" onclick="if(event.target === this) UI.closeModal('usersModal')">
                 <div class="modal-content" style="max-width: 650px;">
                     <div class="flex justify-between items-center mb-4 sm:mb-5"><h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">إدارة المستخدمين</h3><button onclick="UI.closeModal('usersModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl sm:text-2xl"></i></button></div>
@@ -226,7 +219,6 @@ const UI = (() => {
                 </div>
             </div>
 
-            <!-- مودال التأكيد -->
             <div id="confirmModal" class="modal-overlay">
                 <div class="modal-content text-center">
                     <div class="text-4xl sm:text-5xl mb-4 text-rose-500"><i class="fa-solid fa-circle-question"></i></div>
@@ -238,7 +230,6 @@ const UI = (() => {
                 </div>
             </div>
 
-            <!-- مودال التنبيه -->
             <div id="alertModal" class="modal-overlay">
                 <div class="modal-content text-center">
                     <div class="text-4xl sm:text-5xl mb-4 text-odoo-500"><i class="fa-solid fa-circle-info"></i></div>
@@ -249,9 +240,6 @@ const UI = (() => {
         `;
     }
 
-    /**
-     * بناء شبكة التقارير
-     */
     function buildReportsGrid() {
         const container = document.getElementById('reportsGrid');
         if (!container) return;
@@ -280,16 +268,444 @@ const UI = (() => {
         `).join('');
     }
 
-    // ... (باقي الدوال: renderTable, filterTable, openColumnSettings, إلخ)
+    // ========== عرض الجدول ==========
 
-    // تصدير جزئي للمتغيرات المطلوبة
+    function renderTable() {
+        const allColumns = window.APP_CONFIG?.ALL_COLUMNS || [];
+        const visibleCols = allColumns.filter(c => c.visible);
+        const user = FirebaseModule.currentUser;
+        const isAdmin = (user?.role === 'super_admin' || user?.role === 'branch_admin');
+        
+        // رأس الجدول
+        const theadRow = document.querySelector('#mainOrdersTable thead tr');
+        if (!theadRow) return;
+        
+        let headerHtml = '';
+        const names = { 
+            date:'التاريخ', soNumber:'رقم SO', name:'العميل', phone:'الهاتف', 
+            type:'النوع', total:'الإجمالي', paid:'المدفوع', remaining:'المتبقي', 
+            status:'التواجد', delivery:'التسليم', notes:'ملاحظات', days:'الأيام' 
+        };
+        
+        visibleCols.forEach(col => { 
+            const centerCols = ['total','paid','remaining','status','delivery','days'];
+            headerHtml += `<th class="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-600${centerCols.includes(col.id)?' text-center':''}">${names[col.id]}</th>`; 
+        });
+        headerHtml += '<th class="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-600 text-center no-print">واتساب</th>';
+        if (isAdmin) headerHtml += '<th class="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-600 text-center no-print">إجراءات</th>';
+        theadRow.innerHTML = headerHtml;
+
+        // جسم الجدول
+        const tbody = document.getElementById('tableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        
+        const filtered = getFilteredOrders();
+        const totalCount = filtered.length;
+        const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+        
+        if (currentPage > totalPages) currentPage = totalPages || 1;
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const displayOrders = filtered.slice(start, start + PAGE_SIZE);
+
+        let officeCount = 0, shopCount = 0, debtSum = 0;
+        filtered.forEach(o => { 
+            if (o.status === 'في المكتب') officeCount++; 
+            else if (o.status === 'بالمحل') shopCount++; 
+            if (o.remaining > 0) debtSum += o.remaining; 
+        });
+
+        document.getElementById('noDataView').classList.toggle('hidden', totalCount > 0);
+
+        displayOrders.forEach(o => {
+            let tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-slate-700 dark:text-slate-200 text-sm sm:text-base";
+            
+            const days = getDaysSince(o.date);
+            if (o.status === 'في المكتب' && days >= 30) tr.classList.add('delayed-danger');
+            else if (o.status === 'في المكتب' && days >= 14) tr.classList.add('delayed-danger');
+            else if (o.status === 'في المكتب' && days >= 7) tr.classList.add('delayed-warning');
+
+            let rowHtml = '';
+            visibleCols.forEach(col => {
+                switch(col.id) {
+                    case 'date': rowHtml += `<td class="p-3 sm:p-4 whitespace-nowrap">${o.date}</td>`; break;
+                    case 'soNumber': rowHtml += `<td class="p-3 sm:p-4 font-mono font-bold text-odoo-600 dark:text-odoo-400">${o.soNumber||'—'}</td>`; break;
+                    case 'name': rowHtml += `<td class="p-3 sm:p-4 font-semibold">${o.name}</td>`; break;
+                    case 'phone': rowHtml += `<td class="p-3 sm:p-4 whitespace-nowrap">${o.phone}</td>`; break;
+                    case 'type': rowHtml += `<td class="p-3 sm:p-4"><span class="type-badge ${getTypeBadgeClass(o.type)}">${o.type}</span></td>`; break;
+                    case 'total': rowHtml += `<td class="p-3 sm:p-4 text-center font-bold">${o.total}</td>`; break;
+                    case 'paid': rowHtml += `<td class="p-3 sm:p-4 text-center text-emerald-600 dark:text-emerald-400">${o.paid}</td>`; break;
+                    case 'remaining': rowHtml += `<td class="p-3 sm:p-4 text-center ${o.remaining>0?'text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-900/20':'text-slate-400 dark:text-slate-500'}">${o.remaining}</td>`; break;
+                    case 'status':
+                        const badge = o.status==='في المكتب'
+                            ?'bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                            :'bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300';
+                        rowHtml += `<td class="p-3 sm:p-4 text-center"><span class="inline-flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold ${badge} border border-amber-200 dark:border-amber-700/40"><span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${o.status==='في المكتب'?'bg-amber-500':'bg-emerald-500'}"></span>${o.status}</span></td>`; break;
+                    case 'delivery':
+                        const d = o.delivery==='تم التسليم'
+                            ?'<span class="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm"><i class="fa-solid fa-check"></i> تم</span>'
+                            :'<span class="text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm"><i class="fa-solid fa-clock"></i> لم يتم</span>';
+                        rowHtml += `<td class="p-3 sm:p-4 text-center ${isAdmin?'cursor-pointer':''}" ${isAdmin?`onclick="OrdersModule.toggleDelivery('${o.id}')"`:''}>${d}</td>`; break;
+                    case 'notes': rowHtml += `<td class="p-3 sm:p-4 max-w-[100px] sm:max-w-[140px] truncate text-slate-500 dark:text-slate-400" title="${o.notes||''}">${o.notes||'—'}</td>`; break;
+                    case 'days':
+                        let daysHtml = days;
+                        if (days >= 30) daysHtml = `<span class="text-red-600 font-bold">${days}</span>`;
+                        else if (days >= 14) daysHtml = `<span class="text-red-500 font-bold">${days}</span>`;
+                        else if (days >= 7) daysHtml = `<span class="text-amber-600 font-bold">${days}</span>`;
+                        rowHtml += `<td class="p-3 sm:p-4 text-center">${daysHtml}</td>`; break;
+                }
+            });
+            
+            rowHtml += `<td class="p-3 sm:p-4 text-center no-print"><button onclick="sendWhatsApp('${o.phone}', '${o.name.replace(/'/g, "\\'")}')" class="whatsapp-btn p-1.5 sm:p-2 rounded-lg"><i class="fa-brands fa-whatsapp text-xl sm:text-2xl"></i></button></td>`;
+            
+            if (isAdmin) {
+                rowHtml += `<td class="p-3 sm:p-4 text-center no-print"><div class="flex justify-center gap-1">
+                    <button onclick="OrdersModule.openEditModal('${o.id}')" class="text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 p-1.5 sm:p-2 rounded-lg"><i class="fa-solid fa-pen-to-square text-base sm:text-lg"></i></button>
+                    <button onclick="OrdersModule.toggleStatus('${o.id}')" class="text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 p-1.5 sm:p-2 rounded-lg"><i class="fa-solid fa-right-left text-base sm:text-lg"></i></button>
+                    <button onclick="OrdersModule.deleteOrder('${o.id}')" class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-1.5 sm:p-2 rounded-lg"><i class="fa-regular fa-trash-can text-base sm:text-lg"></i></button>
+                </div></td>`;
+            }
+            
+            tr.innerHTML = rowHtml;
+            tbody.appendChild(tr);
+        });
+
+        // تحديث الإحصائيات
+        updateStats(totalCount, officeCount, shopCount, debtSum);
+        updateSmartAlerts(filtered);
+        updatePagination(totalPages);
+
+        // تحديث التقارير إذا كانت مفتوحة
+        if (document.getElementById('reportsTabContent') && 
+            !document.getElementById('reportsTabContent').classList.contains('hidden')) {
+            ReportsModule.renderAllReports();
+        }
+    }
+
+    function updateStats(total, office, shop, debt) {
+        const statTotal = document.getElementById('statTotal');
+        const statMiami = document.getElementById('statMiami');
+        const statShop = document.getElementById('statShop');
+        const statDebt = document.getElementById('statDebt');
+        
+        if (statTotal) statTotal.innerText = total;
+        if (statMiami) statMiami.innerText = office;
+        if (statShop) statShop.innerText = shop;
+        if (statDebt) statDebt.innerText = debt.toLocaleString('ar-EG');
+    }
+
+    function updateSmartAlerts(branchOrders) {
+        const container = document.getElementById('smartAlerts');
+        if (!container) return;
+        
+        let c7=0, c14=0, c30=0;
+        branchOrders.filter(o => o.status === 'في المكتب').forEach(o => { 
+            const d = getDaysSince(o.date); 
+            if (d >= 30) c30++; 
+            else if (d >= 14) c14++; 
+            else if (d >= 7) c7++; 
+        });
+        
+        let html = '';
+        if (c30>0) html += `<div class="odoo-card p-3 sm:p-4 rounded-xl mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 text-red-700 dark:text-red-400"><i class="fa-solid fa-circle-exclamation text-xl sm:text-2xl"></i> <span class="font-bold text-base sm:text-lg">${c30} طلبات متأخرة جداً (30 يوم أو أكثر)</span></div>`;
+        if (c14>0) html += `<div class="odoo-card p-3 sm:p-4 rounded-xl mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 text-red-600 dark:text-red-400"><i class="fa-solid fa-triangle-exclamation text-xl sm:text-2xl"></i> <span class="font-bold text-base sm:text-lg">${c14} طلبات متأخرة (14 يوم)</span></div>`;
+        if (c7>0) html += `<div class="odoo-card p-3 sm:p-4 rounded-xl mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3 text-amber-600 dark:text-amber-400"><i class="fa-solid fa-exclamation-triangle text-xl sm:text-2xl"></i> <span class="font-bold text-base sm:text-lg">${c7} طلبات متأخرة (7 أيام)</span></div>`;
+        container.innerHTML = html;
+    }
+
+    function updatePagination(totalPages) {
+        const paginationDiv = document.getElementById('paginationControls');
+        const prevBtn = document.getElementById('prevPageBtn');
+        const nextBtn = document.getElementById('nextPageBtn');
+        const pageInfo = document.getElementById('pageInfo');
+        
+        if (!paginationDiv) return;
+        
+        if (totalPages > 1) {
+            paginationDiv.classList.remove('hidden');
+            if (prevBtn) prevBtn.disabled = currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+            if (pageInfo) pageInfo.innerText = `صفحة ${currentPage} من ${totalPages}`;
+        } else {
+            paginationDiv.classList.add('hidden');
+        }
+    }
+
+    // ========== الفلترة والبحث ==========
+
+    function getFilteredOrders() {
+        const user = FirebaseModule.currentUser;
+        const currentBranch = FirebaseModule.currentBranch;
+        let branchOrders;
+
+        if (user?.role === 'super_admin') {
+            if (currentBranch === 'all') 
+                branchOrders = [...FirebaseModule.orders];
+            else 
+                branchOrders = FirebaseModule.orders.filter(o => (o.branch || 'رشيد') === currentBranch);
+        } else if (user?.role === 'branch_admin') {
+            branchOrders = FirebaseModule.orders.filter(o => (o.branch || 'رشيد') === user.branch);
+        } else {
+            branchOrders = FirebaseModule.orders.filter(o => (o.branch || 'رشيد') === currentBranch);
+        }
+
+        const searchEl = document.getElementById('searchBar');
+        const search = searchEl ? searchEl.value.toLowerCase() : '';
+
+        return branchOrders.filter(o => {
+            if (currentFilter === 'office' && o.status !== 'في المكتب') return false;
+            if (currentFilter === 'shop' && o.status !== 'بالمحل') return false;
+            if (currentFilter === 'ready' && (o.status !== 'بالمحل' || o.delivery === 'تم التسليم')) return false;
+            if (currentFilter === 'debt' && o.remaining <= 0) return false;
+            
+            if (search) {
+                return [o.name, o.phone, o.soNumber||'', o.notes||'']
+                    .join(' ').toLowerCase().includes(search);
+            }
+            return true;
+        });
+    }
+
+    function filterTable(type) { 
+        currentFilter = type; 
+        
+        // تحديث أزرار الفلتر
+        document.querySelectorAll('.filter-btn').forEach(b => { 
+            b.classList.remove('bg-white','dark:bg-slate-500','text-odoo-700','dark:text-white','shadow-sm','font-bold'); 
+            b.classList.add('text-slate-600','dark:text-slate-300','font-medium'); 
+        }); 
+        
+        const activeMap = {
+            office:'btnFilterOffice', 
+            shop:'btnFilterShop', 
+            debt:'btnFilterDebt', 
+            ready:'btnFilterReady', 
+            all:'btnFilterAll'
+        };
+        const active = document.getElementById(activeMap[type] || 'btnFilterAll'); 
+        if (active) { 
+            active.classList.add('bg-white','dark:bg-slate-500','text-odoo-700','dark:text-white','shadow-sm','font-bold'); 
+            active.classList.remove('text-slate-600','dark:text-slate-300','font-medium'); 
+        } 
+        
+        currentPage = 1; 
+        renderTable(); 
+    }
+
+    function searchOrders() { 
+        currentPage = 1; 
+        renderTable(); 
+    }
+
+    function goToPage(page) {
+        const totalPages = Math.ceil(getFilteredOrders().length / PAGE_SIZE);
+        currentPage = Math.max(1, Math.min(page, totalPages));
+        renderTable();
+    }
+
+    // ========== إعدادات الأعمدة ==========
+
+    function openColumnSettings() {
+        const container = document.getElementById('columnsCheckboxes');
+        if (!container) return;
+        
+        const allColumns = window.APP_CONFIG?.ALL_COLUMNS || [];
+        
+        container.innerHTML = allColumns.map(col => 
+            `<label class="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg cursor-pointer">
+                <input type="checkbox" ${col.visible ? 'checked' : ''} data-column-id="${col.id}" class="column-checkbox w-5 h-5 text-odoo-500 rounded">
+                <span class="text-sm sm:text-base font-medium text-slate-700 dark:text-slate-200">${col.name}</span>
+            </label>`
+        ).join('');
+        
+        updateColumnCount();
+        document.getElementById('columnSettingsModal').classList.add('active');
+    }
+
+    function updateColumnCount() {
+        const checked = document.querySelectorAll('.column-checkbox:checked').length;
+        const allColumns = window.APP_CONFIG?.ALL_COLUMNS || [];
+        const indicator = document.getElementById('columnCountIndicator');
+        if (indicator) indicator.innerText = `${checked} أعمدة مُفعّلة من أصل ${allColumns.length}`;
+    }
+
+    async function saveColumnSettings() {
+        const allColumns = window.APP_CONFIG?.ALL_COLUMNS || [];
+        
+        document.querySelectorAll('.column-checkbox').forEach(cb => {
+            const col = allColumns.find(c => c.id === cb.dataset.columnId);
+            if (col) col.visible = cb.checked;
+        });
+        
+        const user = FirebaseModule.currentUser;
+        if (user) {
+            const columnsData = allColumns.map(c => ({id: c.id, visible: c.visible}));
+            await FirebaseModule.saveColumnSettings(user.username, columnsData);
+        }
+        
+        closeModal('columnSettingsModal');
+        renderTable();
+    }
+
+    // ========== المودالات ==========
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('active');
+    }
+
+    let confirmCallback = null;
+
+    function showConfirm(message, cb) { 
+        const confirmMessage = document.getElementById('confirmMessage');
+        const confirmModal = document.getElementById('confirmModal');
+        if (confirmMessage) confirmMessage.innerText = message; 
+        if (confirmModal) confirmModal.classList.add('active'); 
+        confirmCallback = cb; 
+    }
+
+    function confirmAction(result) { 
+        const confirmModal = document.getElementById('confirmModal');
+        if (confirmModal) confirmModal.classList.remove('active'); 
+        if (confirmCallback) confirmCallback(result); 
+        confirmCallback = null; 
+    }
+
+    function showAlert(message) { 
+        const alertMessage = document.getElementById('alertMessage');
+        const alertModal = document.getElementById('alertModal');
+        if (alertMessage) alertMessage.innerText = message; 
+        if (alertModal) alertModal.classList.add('active'); 
+    }
+
+    function closeAlert() { 
+        const alertModal = document.getElementById('alertModal');
+        if (alertModal) alertModal.classList.remove('active'); 
+    }
+
+    // ========== وضع ليلي ==========
+
+    function toggleDarkMode() { 
+        const isDark = !document.documentElement.classList.contains('dark');
+        if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('darkModeIcon').className = 'fa-solid fa-sun';
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.getElementById('darkModeIcon').className = 'fa-solid fa-moon';
+        }
+        localStorage.setItem('noor_dark_mode', isDark); 
+    }
+
+    // ========== نموذج قابل للطي ==========
+
+    function toggleOrderForm() { 
+        const user = FirebaseModule.currentUser;
+        if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return; 
+        
+        const c = document.getElementById('formCollapsible');
+        const i = document.getElementById('formToggleIcon');
+        if (c) c.classList.toggle('open'); 
+        if (i) {
+            i.classList.toggle('fa-chevron-up'); 
+            i.classList.toggle('fa-chevron-down');
+        }
+    }
+
+    // ========== دوال مساعدة ==========
+
+    function getTypeBadgeClass(type) { 
+        if (type === 'نظارة وعدسات جديدة') return 'type-new-glasses'; 
+        if (type === 'عدسات فقط') return 'type-lenses-only'; 
+        return 'type-maintenance'; 
+    }
+
+    function getDaysSince(dateStr) { 
+        if (!dateStr) return 0; 
+        const parts = dateStr.split('/'); 
+        if (parts.length !== 3) return 0; 
+        const d = new Date(parts[2], parts[1] - 1, parts[0]); 
+        const now = new Date(); 
+        now.setHours(0,0,0,0); 
+        return Math.floor((now - d) / (1000 * 60 * 60 * 24)); 
+    }
+
+    function sendWhatsApp(phone, name) { 
+        if (!phone || phone === 'غير متوفر') { 
+            showAlert('رقم الهاتف غير متوفر'); 
+            return; 
+        } 
+        let clean = phone.replace(/[^\d]/g, ''); 
+        if (!clean.startsWith('2')) clean = '2' + clean; 
+        window.open(`https://wa.me/${clean}?text=${encodeURIComponent(`مرحباً ${name}،\nنود إعلامك بحالة طلبك في نور للبصريات.`)}`, '_blank'); 
+    }
+
+    // ========== التبديل بين التبويبات ==========
+
+    function switchTab(tab) {
+        const mainTab = document.getElementById('mainTabContent');
+        const reportsTab = document.getElementById('reportsTabContent');
+        const tabMain = document.getElementById('tabMain');
+        const tabReports = document.getElementById('tabReports');
+        
+        if (tab === 'main') {
+            if (mainTab) mainTab.classList.remove('hidden');
+            if (reportsTab) reportsTab.classList.add('hidden');
+            if (tabMain) {
+                tabMain.classList.add('font-bold', 'border-b-2', 'border-white');
+                tabMain.classList.remove('font-medium', 'text-white/70');
+            }
+            if (tabReports) {
+                tabReports.classList.add('font-medium', 'text-white/70');
+                tabReports.classList.remove('font-bold', 'border-b-2', 'border-white');
+            }
+        } else {
+            if (mainTab) mainTab.classList.add('hidden');
+            if (reportsTab) reportsTab.classList.remove('hidden');
+            if (tabReports) {
+                tabReports.classList.add('font-bold', 'border-b-2', 'border-white');
+                tabReports.classList.remove('font-medium', 'text-white/70');
+            }
+            if (tabMain) {
+                tabMain.classList.add('font-medium', 'text-white/70');
+                tabMain.classList.remove('font-bold', 'border-b-2', 'border-white');
+            }
+            ReportsModule.renderAllReports();
+        }
+    }
+
+    // ========== الواجهة العامة ==========
+
     return {
         init,
-        currentPage,
-        set currentPage(val) { currentPage = val; },
+        renderTable,
+        filterTable,
+        searchOrders,
+        goToPage,
+        openColumnSettings,
+        saveColumnSettings,
+        updateColumnCount,
+        closeModal,
+        showConfirm,
+        confirmAction,
+        showAlert,
+        closeAlert,
+        toggleDarkMode,
+        toggleOrderForm,
+        switchTab,
         get currentPage() { return currentPage; },
-        // ... باقي الدوال
+        set currentPage(val) { currentPage = val; }
     };
 })();
 
+// تصدير للمتغير العام
 window.UI = UI;
+
+// تصدير دوال مساعدة للاستخدام العام
+window.sendWhatsApp = UI.sendWhatsApp || function(phone, name) { 
+    if (!phone || phone === 'غير متوفر') return; 
+    let clean = phone.replace(/[^\d]/g, ''); 
+    if (!clean.startsWith('2')) clean = '2' + clean; 
+    window.open(`https://wa.me/${clean}?text=${encodeURIComponent(`مرحباً ${name}،\nنود إعلامك بحالة طلبك في نور للبصريات.`)}`, '_blank'); 
+};
