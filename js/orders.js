@@ -67,44 +67,76 @@ const OrdersModule = (() => {
     }
 
     async function toggleStatus(orderId) {
+        console.log('🔄 toggleStatus called with:', orderId);
         const user = FirebaseModule.currentUser;
-        if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
+        if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) {
+            console.log('❌ لا صلاحية');
+            return;
+        }
         
         const order = FirebaseModule.orders.find(o => o.id === orderId);
+        console.log('🔍 وجد الطلب:', order);
+        
         if (order) {
             order.status = order.status === 'في المكتب' ? 'بالمحل' : 'في المكتب';
             await FirebaseModule.updateOrder(orderId, order);
+            console.log('✅ تم تبديل الحالة إلى:', order.status);
+        } else {
+            console.log('❌ الطلب مش موجود، id:', orderId);
         }
     }
 
     async function toggleDelivery(orderId) {
+        console.log('🔄 toggleDelivery called with:', orderId);
         const user = FirebaseModule.currentUser;
-        if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
+        if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) {
+            console.log('❌ لا صلاحية');
+            return;
+        }
         
         const order = FirebaseModule.orders.find(o => o.id === orderId);
+        console.log('🔍 وجد الطلب:', order);
+        
         if (order) {
             order.delivery = order.delivery === 'لم يتم' ? 'تم التسليم' : 'لم يتم';
             await FirebaseModule.updateOrder(orderId, order);
+            console.log('✅ تم تبديل التسليم إلى:', order.delivery);
+        } else {
+            console.log('❌ الطلب مش موجود، id:', orderId);
         }
     }
 
     async function deleteOrder(orderId) {
+        console.log('🗑️ deleteOrder called with:', orderId);
         const user = FirebaseModule.currentUser;
-        if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
+        if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) {
+            console.log('❌ لا صلاحية');
+            return;
+        }
         
         UI.showConfirm("هل أنت متأكد من حذف هذا الطلب؟", async (ok) => {
             if (ok) {
                 await FirebaseModule.deleteOrder(orderId);
+                console.log('✅ تم حذف الطلب');
             }
         });
     }
 
     function openEditModal(orderId) {
+        console.log('✏️ openEditModal called with:', orderId);
         const user = FirebaseModule.currentUser;
-        if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
+        if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) {
+            console.log('❌ لا صلاحية');
+            return;
+        }
         
         const order = FirebaseModule.orders.find(o => o.id === orderId);
-        if (!order) return;
+        console.log('🔍 وجد الطلب للتحرير:', order);
+        
+        if (!order) {
+            console.log('❌ الطلب مش موجود');
+            return;
+        }
         
         const editId = document.getElementById('editId');
         const editDate = document.getElementById('editDate');
@@ -140,16 +172,22 @@ const OrdersModule = (() => {
         if (editNotes) editNotes.value = order.notes || '';
         
         const editModal = document.getElementById('editModal');
-        if (editModal) editModal.classList.add('active');
+        if (editModal) {
+            editModal.classList.add('active');
+            console.log('✅ تم فتح مودال التعديل');
+        }
     }
 
     async function saveEdit(event) {
         event.preventDefault();
+        console.log('💾 saveEdit called');
         
         const user = FirebaseModule.currentUser;
         if (!user || (user.role !== 'super_admin' && user.role !== 'branch_admin')) return;
         
         const orderId = document.getElementById('editId')?.value;
+        console.log('🔍 orderId للتحرير:', orderId);
+        
         const order = FirebaseModule.orders.find(o => o.id === orderId);
         
         if (order) {
@@ -173,6 +211,7 @@ const OrdersModule = (() => {
             order.notes = document.getElementById('editNotes')?.value?.trim() || '';
             
             await FirebaseModule.updateOrder(orderId, order);
+            console.log('✅ تم حفظ التعديلات');
             
             const editModal = document.getElementById('editModal');
             if (editModal) editModal.classList.remove('active');
@@ -230,6 +269,21 @@ const OrdersModule = (() => {
         const remaining = document.getElementById('editRemaining');
         if (remaining) remaining.value = Math.max(0, total - paid);
     }
+
+    // ربط الأحداث
+    document.addEventListener('DOMContentLoaded', () => {
+        const orderForm = document.getElementById('orderForm');
+        const editForm = document.getElementById('editForm');
+        
+        if (orderForm) {
+            orderForm.addEventListener('submit', addOrder);
+            console.log('✅ تم ربط نموذج الإضافة');
+        }
+        if (editForm) {
+            editForm.addEventListener('submit', saveEdit);
+            console.log('✅ تم ربط نموذج التعديل');
+        }
+    });
 
     return {
         addOrder,
