@@ -4,7 +4,7 @@
 
 // إعدادات Firebase
 const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCWOz9GlOG3aiYQLRoYgS13EjcNB0-zoBY",
+  //  apiKey: "هنا ال api",
     authDomain: "noor-eye-wear.firebaseapp.com",
     projectId: "noor-eye-wear",
     storageBucket: "noor-eye-wear.firebasestorage.app",
